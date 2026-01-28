@@ -7,6 +7,9 @@ export interface PriceDataPoint {
   state: string;
 }
 
+// Backend API base URL
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL || '';
+
 export interface PricePrediction {
   date: string;
   predictedPrice: number;
@@ -65,7 +68,7 @@ export const getPriceForecast = async (params: ForecastParams): Promise<Forecast
     ...(params.algorithm && { algorithm: params.algorithm }),
   });
 
-  const response = await fetch(`/api/market/forecast?${queryParams.toString()}`);
+  const response = await fetch(`${BACKEND_BASE_URL}/api/market/forecast?${queryParams.toString()}`);
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));

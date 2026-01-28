@@ -58,6 +58,9 @@ import { ProductManagement } from "@/components/ProductManagement";
 import { useAuth } from "@/contexts/AuthContext";
 import { getBlockchainTransactions, type BlockchainTransactionHistoryItem } from "@/services/blockchainBackend";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+
+// Backend API base URL
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL || '';
 import {
   ResponsiveContainer,
   BarChart,
@@ -170,7 +173,7 @@ export default function UserProfile() {
   const startDetection = async () => {
     try {
       setDetectionStatus('connecting');
-      const response = await fetch('/api/detection/start', {
+      const response = await fetch(`${BACKEND_BASE_URL}/api/detection/start`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -194,7 +197,7 @@ export default function UserProfile() {
 
   const stopDetection = async () => {
     try {
-      const response = await fetch('/api/detection/stop', {
+      const response = await fetch(`${BACKEND_BASE_URL}/api/detection/stop`, {
         method: 'POST',
       });
 
@@ -213,7 +216,7 @@ export default function UserProfile() {
 
   const getDetectionStatus = async () => {
     try {
-      const response = await fetch('/api/detection/status');
+      const response = await fetch(`${BACKEND_BASE_URL}/api/detection/status`);
       if (response.ok) {
         const status = await response.json();
         setDetectionRunning(status.running);

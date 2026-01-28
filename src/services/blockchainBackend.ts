@@ -1,6 +1,9 @@
 export type BlockchainTransactionType = 'payment' | 'escrow' | 'refund' | 'commission';
 export type BlockchainTransactionStatus = 'pending' | 'confirmed' | 'failed';
 
+// Backend API base URL
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL || '';
+
 export interface BlockchainTransactionHistoryItem {
   transactionHash: string;
   blockNumber: number;
@@ -33,7 +36,7 @@ export async function getBlockchainTransactions(params?: {
   if (params?.transactionType) queryParams.set('transactionType', params.transactionType);
   if (params?.status) queryParams.set('status', params.status);
 
-  const response = await fetch(`/api/blockchain/transactions?${queryParams.toString()}`);
+  const response = await fetch(`${BACKEND_BASE_URL}/api/blockchain/transactions?${queryParams.toString()}`);
   if (!response.ok) {
     throw new Error(`Blockchain API error: ${response.statusText}`);
   }

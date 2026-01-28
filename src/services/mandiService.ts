@@ -2,6 +2,9 @@
 export const API_KEY = '579b464db66ec23bdd00000155389df796544a8c7e34f05e167005a7';
 export const BASE_URL = 'https://api.data.gov.in/resource/35985678-0d79-46b4-9ed6-6f13308a1d24';
 
+// Backend API base URL
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL || '';
+
 // Alternative endpoints in case of CORS issues
 export const CORS_PROXIES = [
   'https://cors-anywhere.herokuapp.com/',
@@ -426,7 +429,7 @@ export const fetchMandiPrices = async (
     if (filters.onlyRecentData !== undefined) params.append('onlyRecentData', filters.onlyRecentData.toString());
     if (filters.searchTerm) params.append('searchTerm', filters.searchTerm);
 
-    const backendUrl = `/api/market/mandi-prices${params.toString() ? '?' + params.toString() : ''}`;
+    const backendUrl = `${BACKEND_BASE_URL}/api/market/mandi-prices${params.toString() ? '?' + params.toString() : ''}`;
     console.log('Backend API Request URL:', backendUrl);
 
     // Create AbortController for timeout

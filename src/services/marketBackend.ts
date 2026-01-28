@@ -1,5 +1,5 @@
 // Market data service for backend API integration
-const API_BASE_URL = import.meta.env.DEV ? '/api' : 'http://localhost:3002/api';
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL ? `${import.meta.env.VITE_BACKEND_URL}/api` : '/api';
 
 export interface MarketPrice {
   commodity: string;

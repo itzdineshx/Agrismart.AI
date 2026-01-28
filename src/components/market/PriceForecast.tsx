@@ -21,6 +21,9 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { INDIAN_STATES } from '@/services/mandiService';
 import { getForecastAlgorithms } from '@/services/forecastService';
 
+// Backend API base URL
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL || '';
+
 interface PriceDataPoint {
   date: string;
   price: number;
@@ -128,7 +131,7 @@ export default function PriceForecast({
       if (selectedState && selectedState !== 'all') params.append('state', selectedState);
       if (selectedDistrict && selectedDistrict !== 'all') params.append('district', selectedDistrict);
 
-      const response = await fetch(`/api/market/forecast?${params.toString()}`);
+      const response = await fetch(`${BACKEND_BASE_URL}/api/market/forecast?${params.toString()}`);
 
       if (!response.ok) {
         throw new Error(`Failed to fetch forecast: ${response.statusText}`);

@@ -1,6 +1,9 @@
 // AI Price Forecasting Service
 // Uses historical price data to predict future commodity prices
 
+// Backend API base URL
+const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL || '';
+
 export interface PriceDataPoint {
   date: string;
   price: number;
@@ -287,7 +290,7 @@ export async function fetchPriceForecast(options: ForecastOptions): Promise<Pric
     if (options.market) params.append('market', options.market);
     if (options.state) params.append('state', options.state);
 
-    const response = await fetch(`/api/market/forecast?${params.toString()}`);
+    const response = await fetch(`${BACKEND_BASE_URL}/api/market/forecast?${params.toString()}`);
 
     if (!response.ok) {
       throw new Error(`Forecast API error: ${response.statusText}`);

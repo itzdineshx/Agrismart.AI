@@ -479,7 +479,11 @@ if (Sentry && process.env.SENTRY_DSN) {
 app.use(errorHandler);
 
 // Start the server
-server.listen(PORT, () => {
-    logger.info({ port: PORT }, 'Server is running');
-    logger.info('WebSocket server ready for real-time detection');
-});
+if (require.main === module) {
+    server.listen(PORT, () => {
+        logger.info({ port: PORT }, 'Server is running');
+        logger.info('WebSocket server ready for real-time detection');
+    });
+}
+
+module.exports = app;
