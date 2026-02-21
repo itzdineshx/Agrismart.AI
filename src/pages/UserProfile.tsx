@@ -86,7 +86,7 @@ interface DetectionResult {
   timestamp: string;
 }
 
-const CAMERA_URL = import.meta.env.VITE_IP_CAMERA_URL1 || 'http://100.77.28.237:8080';
+const CAMERA_URL = import.meta.env.VITE_IP_CAMERA_URL || 'http://100.77.28.237:8080';
 
 export default function UserProfile() {
   const { user } = useAuth();

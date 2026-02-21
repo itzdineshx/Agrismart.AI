@@ -51,8 +51,8 @@ export function AlertsSection() {
   };
 
   return (
-    <div className="px-4 py-6">
-      <div className="flex items-center justify-between mb-4">
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold text-foreground">Critical Alerts</h2>
         <Button variant="ghost" size="sm">
           View All
