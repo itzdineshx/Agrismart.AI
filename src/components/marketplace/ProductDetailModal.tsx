@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -89,6 +89,9 @@ export function ProductDetailModal({ product, children }: ProductDetailModalProp
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-2xl">{product.name}</DialogTitle>
+          <DialogDescription>
+            View detailed information about this product including pricing, features, and secure payment options.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

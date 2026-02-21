@@ -68,8 +68,8 @@ export function QuickActionsGrid() {
   ];
 
   return (
-    <div className="px-4 py-6">
-      <h2 className="text-lg font-semibold text-foreground dark:text-foreground mb-4">Quick Actions</h2>
+    <div className="space-y-4">
+      <h2 className="text-lg font-semibold text-foreground dark:text-foreground">Quick Actions</h2>
       
       <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
         {actions.map((action) => {

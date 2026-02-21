@@ -4,7 +4,7 @@ import L from 'leaflet';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { MapPin, Navigation, Search, Target, Eye, EyeOff, Maximize2, X } from 'lucide-react';
 
@@ -773,6 +773,9 @@ export function InteractiveMap() {
                 <X className="h-4 w-4" />
               </Button>
             </DialogTitle>
+            <DialogDescription>
+              Fullscreen view of the interactive farm map showing crop locations, market data, and agricultural information.
+            </DialogDescription>
           </DialogHeader>
           <div className="flex-1 min-h-0 p-4 pt-0">
             <div className="w-full h-full">

@@ -78,8 +78,8 @@ export function MarketAnalysisPreview() {
   const formatChange = (change: number) => `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
 
   return (
-    <div className='px-4 py-6'>
-      <div className='flex items-center justify-between mb-4'>
+    <div className='space-y-4'>
+      <div className='flex items-center justify-between'>
         <h2 className='text-lg font-semibold text-foreground dark:text-foreground'>📊 Market Analysis</h2>
         <Button
           variant='ghost'

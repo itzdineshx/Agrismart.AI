@@ -38,8 +38,8 @@ export function AISuggestionsSection() {
   ];
 
   return (
-    <div className="px-4 py-6">
-      <Card className="shadow-sm border border-border bg-card dark:bg-card">
+    <div className="h-full">
+      <Card className="shadow-sm border border-border bg-card dark:bg-card h-full">
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2 text-card-foreground">
             <div className="p-2 rounded-lg bg-gradient-to-br from-primary/20 to-primary/10">

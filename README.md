@@ -16,12 +16,14 @@ A comprehensive digital agriculture platform that empowers farmers with smart to
 - **Buy & Sell**: Direct farmer-to-consumer marketplace
 - **Seller Panel**: Comprehensive dashboard for sellers to manage products
 - **Smart Recommendations**: AI-powered product suggestions
+- **Blockchain Transparency**: Smart contract-based transaction tracking for immutable records
 
 ### 🤖 Smart Features
 - **AI Chatbot**: Intelligent farming assistant for queries and guidance
 - **Multilingual Support**: Available in English and Tamil (தமிழ்)
 - **Role-Based Access**: Different interfaces for farmers, buyers, and administrators
 - **Mobile Responsive**: Optimized for all devices
+- **Blockchain Integration**: Transparent transaction tracking using smart contracts
 
 ### 👤 User Management
 - **Secure Authentication**: Powered by Clerk authentication
@@ -32,6 +34,8 @@ A comprehensive digital agriculture platform that empowers farmers with smart to
 ## 🚀 Tech Stack
 
 - **Frontend**: React 18, TypeScript, Vite
+- **Backend**: Node.js, Express.js, MongoDB
+- **Blockchain**: Solidity, ethers.js, Polygon Network
 - **Styling**: Tailwind CSS, shadcn/ui components
 - **Authentication**: Clerk
 - **State Management**: React Context API
