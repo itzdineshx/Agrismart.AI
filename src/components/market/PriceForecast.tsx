@@ -1,43 +1,35 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
 import {
   TrendingUp,
   TrendingDown,
-  Calendar,
   BarChart3,
   Target,
   AlertTriangle,
-  CheckCircle,
   Loader2,
-  Filter,
-  X
+  ChevronDown,
+  Brain,
 } from 'lucide-react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { INDIAN_STATES } from '@/services/mandiService';
 import { getForecastAlgorithms } from '@/services/forecastService';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
-// Backend API base URL
 const BACKEND_BASE_URL = import.meta.env.VITE_BACKEND_URL || '';
 
 interface PriceDataPoint {
   date: string;
   price: number;
-  commodity: string;
-  market: string;
-  district: string;
-  state: string;
 }
 
 interface PricePrediction {
   date: string;
   predictedPrice: number;
   confidence: number;
-  algorithm: string;
 }
 
 interface ForecastInsights {
@@ -51,69 +43,44 @@ interface ForecastInsights {
 }
 
 interface ValidationMetrics {
-  meanAbsolutePercentageError: number;
-  medianAbsolutePercentageError: number;
-  errorStd: number;
   accuracy: number;
+  meanAbsolutePercentageError: number;
   confidence: number;
 }
 
 interface ForecastResponse {
   commodity: string;
   state?: string;
-  district?: string;
   algorithm: string;
   historicalData: PriceDataPoint[];
   forecast: PricePrediction[];
   insights: ForecastInsights;
   validationMetrics: ValidationMetrics;
-  generatedAt: string;
   dataPoints: number;
-}
-
-interface TooltipProps {
-  payload?: Array<{
-    type: string;
-    [key: string]: unknown;
-  }>;
 }
 
 interface PriceForecastProps {
   commodity?: string;
   state?: string;
-  district?: string;
   className?: string;
 }
 
-export default function PriceForecast({
-  commodity = 'Wheat',
-  state,
-  district,
-  className = ''
-}: PriceForecastProps) {
+const COMMODITIES = [
+  'Wheat', 'Rice', 'Maize', 'Cotton', 'Sugarcane', 'Potato', 'Tomato', 'Onion',
+  'Garlic', 'Ginger', 'Chilli', 'Turmeric', 'Mustard', 'Groundnut', 'Soybean',
+  'Banana', 'Mango', 'Orange', 'Apple', 'Grapes', 'Pomegranate', 'Coconut',
+];
+
+export default function PriceForecast({ commodity = 'Wheat', state, className = '' }: PriceForecastProps) {
   const [forecast, setForecast] = useState<ForecastResponse | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  
+  const [selectedCommodity, setSelectedCommodity] = useState(commodity);
+  const [selectedState, setSelectedState] = useState(state || 'all');
   const [selectedAlgorithm, setSelectedAlgorithm] = useState('ensemble');
   const [forecastDays, setForecastDays] = useState(7);
-  
-  // Filter states
-  const [selectedCommodity, setSelectedCommodity] = useState(commodity || 'Wheat');
-  const [selectedState, setSelectedState] = useState(state || 'all');
-  const [selectedDistrict, setSelectedDistrict] = useState(district || 'all');
-  const [showFilters, setShowFilters] = useState(false);
-
-  // Common agricultural commodities available in Indian mandis
-  const commonCommodities = useMemo(() => [
-    'Wheat', 'Rice', 'Maize', 'Cotton', 'Sugarcane', 'Potato', 'Tomato', 'Onion',
-    'Garlic', 'Ginger', 'Chilli', 'Turmeric', 'Coriander', 'Cumin', 'Mustard',
-    'Groundnut', 'Soybean', 'Sunflower', 'Castor', 'Sesame', 'Linseed',
-    'Banana', 'Mango', 'Orange', 'Apple', 'Grapes', 'Pomegranate', 'Guava',
-    'Papaya', 'Pineapple', 'Coconut', 'Lemon', 'Sweet Potato', 'Brinjal',
-    'Cabbage', 'Cauliflower', 'Carrot', 'Radish', 'Spinach', 'Fenugreek',
-    'Coriander Leaves', 'Mint', 'Green Chilli', 'Lady Finger', 'Bitter Gourd',
-    'Bottle Gourd', 'Pumpkin', 'Drumstick', 'Cluster Beans', 'French Beans'
-  ], []);
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   const algorithms = getForecastAlgorithms();
 
@@ -125,478 +92,271 @@ export default function PriceForecast({
       const params = new URLSearchParams({
         commodity: selectedCommodity,
         algorithm: selectedAlgorithm,
-        days: forecastDays.toString()
+        days: forecastDays.toString(),
       });
+      if (selectedState !== 'all') params.append('state', selectedState);
 
-      if (selectedState && selectedState !== 'all') params.append('state', selectedState);
-      if (selectedDistrict && selectedDistrict !== 'all') params.append('district', selectedDistrict);
-
-      const response = await fetch(`${BACKEND_BASE_URL}/api/market/forecast?${params.toString()}`);
-
-      if (!response.ok) {
-        throw new Error(`Failed to fetch forecast: ${response.statusText}`);
-      }
-
-      const data: ForecastResponse = await response.json();
-      setForecast(data);
+      const response = await fetch(`${BACKEND_BASE_URL}/api/market/forecast?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch forecast');
+      setForecast(await response.json());
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to fetch forecast');
-      console.error('Forecast error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to fetch');
     } finally {
       setIsLoading(false);
     }
-  }, [selectedCommodity, selectedState, selectedDistrict, selectedAlgorithm, forecastDays]);
+  }, [selectedCommodity, selectedState, selectedAlgorithm, forecastDays]);
 
-  const clearFilters = () => {
-    setSelectedCommodity('Wheat');
-    setSelectedState('all');
-    setSelectedDistrict('all');
-  };
-
-  const hasActiveFilters = selectedState !== 'all' || selectedDistrict !== 'all';
-
-  const getTrendIcon = (trend: string) => {
-    switch (trend) {
-      case 'upward':
-        return <TrendingUp className="h-4 w-4 text-green-500" />;
-      case 'downward':
-        return <TrendingDown className="h-4 w-4 text-red-500" />;
-      default:
-        return <BarChart3 className="h-4 w-4 text-gray-500" />;
-    }
-  };
-
-  const getConfidenceColor = (confidence: number) => {
-    if (confidence >= 0.8) return 'text-green-600';
-    if (confidence >= 0.6) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  const getAccuracyColor = (accuracy: number) => {
-    if (accuracy >= 0.8) return 'text-green-600';
-    if (accuracy >= 0.6) return 'text-yellow-600';
-    return 'text-red-600';
-  };
-
-  const prepareChartData = () => {
+  const chartData = useMemo(() => {
     if (!forecast) return [];
-
-    const historical = forecast.historicalData.map(item => ({
-      date: new Date(item.date.split('/').reverse().join('-')).toLocaleDateString(),
-      price: item.price / 100, // Convert from quintal to kg
-      type: 'historical'
+    const historical = forecast.historicalData.map(d => ({
+      date: new Date(d.date.split('/').reverse().join('-')).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
+      price: d.price / 100,
+      type: 'historical',
     }));
-
-    const predictions = forecast.forecast.map(item => ({
-      date: new Date(item.date).toLocaleDateString(),
-      price: item.predictedPrice / 100, // Convert from quintal to kg
+    const predictions = forecast.forecast.map(d => ({
+      date: new Date(d.date).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }),
+      price: d.predictedPrice / 100,
+      predicted: d.predictedPrice / 100,
       type: 'forecast',
-      confidence: item.confidence
     }));
-
     return [...historical, ...predictions];
-  };
+  }, [forecast]);
+
+  const TrendIcon = forecast?.insights.trend === 'upward' ? TrendingUp : TrendingDown;
+  const trendColor = forecast?.insights.trend === 'upward' ? 'text-green-500' : forecast?.insights.trend === 'downward' ? 'text-red-500' : 'text-gray-500';
 
   if (error) {
     return (
       <Card className={className}>
-        <CardContent className="p-6">
-          <div className="text-center text-red-600">
-            <AlertTriangle className="h-8 w-8 mx-auto mb-2" />
-            <p>{error}</p>
-            <Button onClick={fetchForecast} className="mt-4">
-              Try Again
-            </Button>
-          </div>
+        <CardContent className="flex flex-col items-center justify-center py-8">
+          <AlertTriangle className="h-8 w-8 text-red-500 mb-2" />
+          <p className="text-red-600 text-sm mb-3">{error}</p>
+          <Button size="sm" onClick={fetchForecast}>Retry</Button>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className={`space-y-6 ${className}`}>
-      {/* Controls */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Target className="h-5 w-5" />
-            AI Price Forecasting
+    <div className={`space-y-4 ${className}`}>
+      {/* Controls Card */}
+      <Card className="shadow-sm">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm flex items-center gap-2">
+            <Brain className="h-4 w-4 text-primary" />
+            AI Price Forecast
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {/* Filter Controls */}
-          <div className="flex items-center justify-between">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2"
-            >
-              <Filter className="h-4 w-4" />
-              Filters
-              {hasActiveFilters && (
-                <Badge variant="secondary" className="ml-1 h-5 w-5 rounded-full p-0 text-xs">
-                  {(selectedState ? 1 : 0) + (selectedDistrict ? 1 : 0)}
-                </Badge>
-              )}
+        <CardContent className="space-y-3">
+          {/* Main Controls Row */}
+          <div className="flex flex-wrap gap-2">
+            <Select value={selectedCommodity} onValueChange={setSelectedCommodity}>
+              <SelectTrigger className="w-[130px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {COMMODITIES.map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+              </SelectContent>
+            </Select>
+
+            <Select value={forecastDays.toString()} onValueChange={v => setForecastDays(parseInt(v))}>
+              <SelectTrigger className="w-[90px] h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="3">3 Days</SelectItem>
+                <SelectItem value="7">7 Days</SelectItem>
+                <SelectItem value="14">14 Days</SelectItem>
+                <SelectItem value="30">30 Days</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Button size="sm" onClick={fetchForecast} disabled={isLoading} className="h-8">
+              {isLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : 'Generate'}
             </Button>
-            {hasActiveFilters && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={clearFilters}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <X className="h-4 w-4 mr-1" />
-                Clear Filters
-              </Button>
-            )}
           </div>
 
-          {showFilters && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
-              <div>
-                <Label htmlFor="commodity-select" className="text-sm font-medium">
-                  Commodity *
-                </Label>
-                <Select value={selectedCommodity} onValueChange={setSelectedCommodity}>
-                  <SelectTrigger id="commodity-select">
-                    <SelectValue placeholder="Select Commodity" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {commonCommodities.map((comm) => (
-                      <SelectItem key={comm} value={comm}>
-                        {comm}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="state-select" className="text-sm font-medium">
-                  State
-                </Label>
-                <Select value={selectedState} onValueChange={(value) => {
-                  setSelectedState(value);
-                  setSelectedDistrict('all'); // Clear district when state changes
-                }}>
-                  <SelectTrigger id="state-select">
+          {/* Collapsible Advanced Options */}
+          <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="w-full h-7 text-xs text-muted-foreground">
+                Advanced Options <ChevronDown className={`h-3 w-3 ml-1 transition-transform ${filtersOpen ? 'rotate-180' : ''}`} />
+              </Button>
+            </CollapsibleTrigger>
+            <CollapsibleContent className="pt-2">
+              <div className="flex flex-wrap gap-2 p-2 bg-muted/50 rounded-md">
+                <Select value={selectedState} onValueChange={setSelectedState}>
+                  <SelectTrigger className="w-[140px] h-8 text-xs">
                     <SelectValue placeholder="All States" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All States</SelectItem>
-                    {INDIAN_STATES.map((stateName) => (
-                      <SelectItem key={stateName} value={stateName}>
-                        {stateName}
-                      </SelectItem>
+                    {INDIAN_STATES.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+
+                <Select value={selectedAlgorithm} onValueChange={setSelectedAlgorithm}>
+                  <SelectTrigger className="w-[140px] h-8 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {algorithms.map(a => (
+                      <SelectItem key={a.value} value={a.value}>{a.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-
-              <div>
-                <Label htmlFor="district-select" className="text-sm font-medium">
-                  District
-                </Label>
-                <Select 
-                  value={selectedDistrict} 
-                  onValueChange={setSelectedDistrict}
-                  disabled={selectedState === 'all'}
-                >
-                  <SelectTrigger id="district-select">
-                    <SelectValue placeholder={selectedState !== 'all' ? "Select District" : "Select State first"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Districts</SelectItem>
-                    {/* Note: In a real implementation, you'd fetch districts based on selected state */}
-                    {/* For now, we'll keep it simple and let the API handle district filtering */}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
-
-          {/* Algorithm and Days Controls */}
-          {/* Algorithm and Days Controls */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="algorithm">Algorithm</Label>
-              <Select value={selectedAlgorithm} onValueChange={setSelectedAlgorithm}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {algorithms.map((alg) => (
-                    <SelectItem key={alg.value} value={alg.value}>
-                      <div>
-                        <div className="font-medium">{alg.label}</div>
-                        <div className="text-sm text-gray-500">{alg.description}</div>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div>
-              <Label htmlFor="days">Forecast Days</Label>
-              <Select value={forecastDays.toString()} onValueChange={(value) => setForecastDays(parseInt(value))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="3">3 Days</SelectItem>
-                  <SelectItem value="7">7 Days</SelectItem>
-                  <SelectItem value="14">14 Days</SelectItem>
-                  <SelectItem value="30">30 Days</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="flex items-end">
-              <Button onClick={fetchForecast} disabled={isLoading} className="w-full">
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    Generating...
-                  </>
-                ) : (
-                  'Generate Forecast'
-                )}
-              </Button>
-            </div>
-          </div>
+            </CollapsibleContent>
+          </Collapsible>
         </CardContent>
       </Card>
 
-      {/* Forecast Chart */}
+      {/* Results */}
       {forecast && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span>
-                AI Forecast for {forecast.commodity}
-                {forecast.state && <span className="text-sm text-muted-foreground ml-2">({forecast.state})</span>}
-                {forecast.district && <span className="text-sm text-muted-foreground"> - {forecast.district}</span>}
-              </span>
-              <Badge variant="outline">
-                {forecast.dataPoints} data points
-              </Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={prepareChartData()}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 12 }}
-                    interval="preserveStartEnd"
-                  />
-                  <YAxis
-                    tick={{ fontSize: 12 }}
-                    label={{ value: 'Price per kg (₹)', angle: -90, position: 'insideLeft' }}
-                  />
-                  <Tooltip
-                    formatter={(value: number, name: string, props: TooltipProps) => [
-                      `₹${value.toFixed(2)}/kg (₹${(value * 100).toFixed(2)}/quintal)`,
-                      props.payload?.[0]?.type === 'forecast' ? 'Predicted' : 'Historical'
-                    ]}
-                    labelFormatter={(label: string) => `Date: ${label}`}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="price"
-                    stroke="#2563eb"
-                    fill="#3b82f6"
-                    fillOpacity={0.1}
-                    strokeWidth={2}
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Insights */}
-      {forecast && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Market Insights
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span>Current Price</span>
-                <div className="text-right">
-                  <div className="font-semibold">₹{forecast.insights.currentPrice.toFixed(2)}/quintal</div>
-                  <div className="text-sm text-gray-600">₹{(forecast.insights.currentPrice / 100).toFixed(2)}/kg</div>
+        <>
+          {/* Stats Row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <Card className="shadow-sm">
+              <CardContent className="p-3">
+                <p className="text-xs text-muted-foreground">Current</p>
+                <p className="text-lg font-bold">₹{(forecast.insights.currentPrice / 100).toFixed(1)}</p>
+                <p className="text-xs text-muted-foreground">per kg</p>
+              </CardContent>
+            </Card>
+            <Card className="shadow-sm">
+              <CardContent className="p-3">
+                <p className="text-xs text-muted-foreground">Average</p>
+                <p className="text-lg font-bold">₹{(forecast.insights.averagePrice / 100).toFixed(1)}</p>
+                <p className="text-xs text-muted-foreground">per kg</p>
+              </CardContent>
+            </Card>
+            <Card className="shadow-sm">
+              <CardContent className="p-3">
+                <p className="text-xs text-muted-foreground">Trend</p>
+                <div className="flex items-center gap-1">
+                  <TrendIcon className={`h-4 w-4 ${trendColor}`} />
+                  <span className={`text-sm font-medium capitalize ${trendColor}`}>{forecast.insights.trend}</span>
                 </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span>Average Price</span>
-                <div className="text-right">
-                  <div className="font-semibold">₹{forecast.insights.averagePrice.toFixed(2)}/quintal</div>
-                  <div className="text-sm text-gray-600">₹{(forecast.insights.averagePrice / 100).toFixed(2)}/kg</div>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span>Trend</span>
-                <div className="flex items-center gap-2">
-                  {getTrendIcon(forecast.insights.trend)}
-                  <span className="capitalize">{forecast.insights.trend}</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span>Volatility</span>
-                <span>{forecast.insights.volatility.toFixed(2)}%</span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span>Predicted Change</span>
-                <span className={forecast.insights.predictedChangePercent > 0 ? 'text-green-600' : 'text-red-600'}>
-                  {forecast.insights.predictedChangePercent > 0 ? '+' : ''}
-                  {forecast.insights.predictedChangePercent.toFixed(2)}%
-                </span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CheckCircle className="h-5 w-5" />
-                AI Recommendation
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span>Confidence Level</span>
-                <div className="flex items-center gap-2">
-                  <Progress value={forecast.insights.confidence * 100} className="w-20" />
-                  <span className={`font-semibold ${getConfidenceColor(forecast.insights.confidence)}`}>
-                    {(forecast.insights.confidence * 100).toFixed(0)}%
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-4 bg-blue-50 rounded-lg">
-                <p className="text-sm font-medium text-blue-900 mb-2">Recommendation</p>
-                <p className="text-blue-800">{forecast.insights.recommendation}</p>
-              </div>
-
-              <div className="text-xs text-gray-500">
-                Generated using {algorithms.find(a => a.value === forecast.algorithm)?.label}
-                <br />
-                Based on {forecast.dataPoints} historical data points
-                <br />
-                Last updated: {new Date(forecast.generatedAt).toLocaleString()}
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Model Performance
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span>Model Accuracy</span>
-                <span className={`font-semibold ${getAccuracyColor(forecast.validationMetrics.accuracy)}`}>
-                  {(forecast.validationMetrics.accuracy * 100).toFixed(1)}%
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span>Mean Error</span>
-                <span className="text-sm">
-                  {(forecast.validationMetrics.meanAbsolutePercentageError * 100).toFixed(2)}%
-                </span>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span>Error Consistency</span>
-                <div className="flex items-center gap-2">
-                  <Progress value={forecast.validationMetrics.confidence * 100} className="w-16" />
-                  <span className="text-sm">
-                    {(forecast.validationMetrics.confidence * 100).toFixed(0)}%
-                  </span>
-                </div>
-              </div>
-
-              <div className="p-3 bg-green-50 rounded-lg">
-                <p className="text-xs font-medium text-green-900 mb-1">Validation Method</p>
-                <p className="text-xs text-green-800">
-                  Cross-validated on {forecast.dataPoints} data points using {forecast.algorithm.toUpperCase()} algorithm
+                <p className={`text-xs ${forecast.insights.predictedChangePercent > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {forecast.insights.predictedChangePercent > 0 ? '+' : ''}{forecast.insights.predictedChangePercent.toFixed(1)}%
                 </p>
+              </CardContent>
+            </Card>
+            <Card className="shadow-sm">
+              <CardContent className="p-3">
+                <p className="text-xs text-muted-foreground">Accuracy</p>
+                <p className="text-lg font-bold">{(forecast.validationMetrics.accuracy * 100).toFixed(0)}%</p>
+                <Progress value={forecast.validationMetrics.accuracy * 100} className="h-1 mt-1" />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Chart */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <BarChart3 className="h-4 w-4 text-primary" />
+                  {forecast.commodity} Price Forecast
+                </span>
+                <Badge variant="outline" className="text-xs">{forecast.dataPoints} points</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-2">
+              <div className="h-52 sm:h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={chartData} margin={{ top: 5, right: 5, left: -20, bottom: 5 }}>
+                    <defs>
+                      <linearGradient id="forecastGrad" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0} />
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
+                    <XAxis dataKey="date" tick={{ fontSize: 9 }} tickLine={false} />
+                    <YAxis tick={{ fontSize: 9 }} tickFormatter={v => `₹${v}`} tickLine={false} axisLine={false} />
+                    <Tooltip
+                      contentStyle={{ fontSize: '12px', borderRadius: '8px' }}
+                      formatter={(v: number, name: string) => [`₹${v.toFixed(2)}/kg`, name === 'predicted' ? 'Predicted' : 'Price']}
+                    />
+                    <Area type="monotone" dataKey="price" stroke="hsl(142, 76%, 36%)" fill="url(#forecastGrad)" strokeWidth={2} />
+                    <Area type="monotone" dataKey="predicted" stroke="hsl(48, 96%, 53%)" fill="none" strokeWidth={2} strokeDasharray="5 5" />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
-        </div>
+
+          {/* Recommendation */}
+          <Card className="shadow-sm bg-primary/5 border-primary/20">
+            <CardContent className="p-3">
+              <div className="flex items-start gap-2">
+                <Target className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-xs font-medium text-primary mb-1">AI Recommendation</p>
+                  <p className="text-sm">{forecast.insights.recommendation}</p>
+                  <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                    <span>Confidence: {(forecast.insights.confidence * 100).toFixed(0)}%</span>
+                    <span>Volatility: {forecast.insights.volatility.toFixed(1)}%</span>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Forecast Table - Compact */}
+          <Card className="shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">Detailed Predictions</CardTitle>
+            </CardHeader>
+            <CardContent className="p-2">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b">
+                      <th className="text-left py-2 px-2">Date</th>
+                      <th className="text-right py-2 px-2">Price</th>
+                      <th className="text-center py-2 px-2">Confidence</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {forecast.forecast.map((p, i) => {
+                      const prev = i === 0 ? forecast.insights.currentPrice : forecast.forecast[i - 1].predictedPrice;
+                      const change = ((p.predictedPrice - prev) / prev) * 100;
+                      return (
+                        <tr key={p.date} className="border-b last:border-0">
+                          <td className="py-2 px-2">{new Date(p.date).toLocaleDateString('en-IN', { weekday: 'short', month: 'short', day: 'numeric' })}</td>
+                          <td className="text-right py-2 px-2">
+                            <span className="font-medium">₹{(p.predictedPrice / 100).toFixed(1)}/kg</span>
+                            <span className={`ml-1 ${change > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              ({change > 0 ? '+' : ''}{change.toFixed(1)}%)
+                            </span>
+                          </td>
+                          <td className="py-2 px-2">
+                            <div className="flex items-center justify-center gap-1">
+                              <Progress value={p.confidence * 100} className="w-12 h-1.5" />
+                              <span className="text-muted-foreground">{(p.confidence * 100).toFixed(0)}%</span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </CardContent>
+          </Card>
+        </>
       )}
 
-      {/* Forecast Table */}
-      {forecast && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Detailed Forecast</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b">
-                    <th className="text-left p-2">Date</th>
-                    <th className="text-right p-2">Predicted Price</th>
-                    <th className="text-center p-2">Confidence</th>
-                    <th className="text-center p-2">Change</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {forecast.forecast.map((prediction, index) => {
-                    const prevPrice = index === 0 ? forecast.insights.currentPrice : forecast.forecast[index - 1].predictedPrice;
-                    const change = ((prediction.predictedPrice - prevPrice) / prevPrice) * 100;
-
-                    return (
-                      <tr key={prediction.date} className="border-b">
-                        <td className="p-2">
-                          {new Date(prediction.date).toLocaleDateString()}
-                        </td>
-                        <td className="text-right p-2">
-                          <div className="font-semibold">₹{prediction.predictedPrice.toFixed(2)}/quintal</div>
-                          <div className="text-xs text-gray-600">₹{(prediction.predictedPrice / 100).toFixed(2)}/kg</div>
-                        </td>
-                        <td className="text-center p-2">
-                          <div className="flex items-center justify-center gap-2">
-                            <Progress value={prediction.confidence * 100} className="w-16 h-2" />
-                            <span className={`text-xs ${getConfidenceColor(prediction.confidence)}`}>
-                              {(prediction.confidence * 100).toFixed(0)}%
-                            </span>
-                          </div>
-                        </td>
-                        <td className="text-center p-2">
-                          <span className={change > 0 ? 'text-green-600' : change < 0 ? 'text-red-600' : 'text-gray-600'}>
-                            {change > 0 ? '+' : ''}{change.toFixed(2)}%
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+      {/* Empty State */}
+      {!forecast && !isLoading && (
+        <Card className="shadow-sm">
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <Brain className="h-10 w-10 text-muted-foreground mb-3" />
+            <p className="text-muted-foreground text-sm text-center">
+              Select a commodity and click Generate to see AI price predictions
+            </p>
           </CardContent>
         </Card>
       )}
