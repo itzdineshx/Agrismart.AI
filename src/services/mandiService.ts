@@ -1,5 +1,6 @@
 // Mandi Price Service for Data.gov.in API
-export const API_KEY = '579b464db66ec23bdd00000155389df796544a8c7e34f05e167005a7';
+// Use environment variable with fallback for development
+export const API_KEY = import.meta.env.VITE_MARKET_API_KEY || '579b464db66ec23bdd00000155389df796544a8c7e34f05e167005a7';
 export const BASE_URL = 'https://api.data.gov.in/resource/35985678-0d79-46b4-9ed6-6f13308a1d24';
 
 // Backend API base URL

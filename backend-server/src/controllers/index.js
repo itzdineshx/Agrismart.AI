@@ -933,8 +933,8 @@ const getMarketAnalysis = async (req, res) => {
     try {
         const { commodity } = req.query;
 
-        // API configuration
-        const API_KEY = '579b464db66ec23bdd00000155389df796544a8c7e34f05e167005a7';
+        // API configuration - use environment variable
+        const API_KEY = process.env.MARKET_API_KEY || '579b464db66ec23bdd00000155389df796544a8c7e34f05e167005a7';
         const BASE_URL = 'https://api.data.gov.in/resource/35985678-0d79-46b4-9ed6-6f13308a1d24';
 
         // Fetch recent data from the API
@@ -1216,8 +1216,8 @@ const getMandiPrices = async (req, res) => {
             searchTerm
         } = req.query;
 
-        // API configuration
-        const API_KEY = '579b464db66ec23bdd00000155389df796544a8c7e34f05e167005a7';
+        // API configuration - use environment variable
+        const API_KEY = process.env.MARKET_API_KEY || '579b464db66ec23bdd00000155389df796544a8c7e34f05e167005a7';
         const BASE_URL = 'https://api.data.gov.in/resource/35985678-0d79-46b4-9ed6-6f13308a1d24';
 
         console.log('Backend: Fetching mandi prices with filters:', {
@@ -1520,8 +1520,8 @@ const getPriceForecast = async (req, res) => {
             });
         }
 
-        // First, fetch historical data for the commodity
-        const API_KEY = '579b464db66ec23bdd00000155389df796544a8c7e34f05e167005a7';
+        // First, fetch historical data for the commodity - use environment variable
+        const API_KEY = process.env.MARKET_API_KEY || '579b464db66ec23bdd00000155389df796544a8c7e34f05e167005a7';
         const BASE_URL = 'https://api.data.gov.in/resource/35985678-0d79-46b4-9ed6-6f13308a1d24';
 
         // Build parameters for historical data
