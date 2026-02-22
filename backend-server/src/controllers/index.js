@@ -1506,11 +1506,23 @@ const getPriceForecast = async (req, res) => {
             state,
             district,
             days = 7,
-            algorithm = 'linear_regression'
+            algorithm = 'ensemble'
         } = req.query;
 
+        // Map algorithm names (convert snake_case to camelCase for backend compatibility)
+        const algorithmMap = {
+            'linear_regression': 'arima', // Map deprecated linear_regression to arima
+            'random_forest': 'randomForest',
+            'svr': 'svr',
+            'arima': 'arima',
+            'lstm': 'lstm',
+            'xgboost': 'xgboost',
+            'ensemble': 'ensemble'
+        };
+        const normalizedAlgorithm = algorithmMap[algorithm] || 'ensemble';
+
         console.log('Backend: Generating price forecast with params:', {
-            commodity, state, district, days, algorithm
+            commodity, state, district, days, algorithm: normalizedAlgorithm
         });
 
         // Validate required parameters
@@ -1611,11 +1623,11 @@ const getPriceForecast = async (req, res) => {
 
         // Generate forecast using AI algorithms
         const forecastingService = new AdvancedForecastingService();
-        const forecast = forecastingService.forecast(historicalData, parseInt(days), algorithm);
+        const forecast = forecastingService.forecast(historicalData, parseInt(days), normalizedAlgorithm);
 
         // Get model validation metrics
         const processedData = forecastingService.preprocessData(historicalData);
-        const validationMetrics = forecastingService.validateModel(processedData, algorithm);
+        const validationMetrics = forecastingService.validateModel(processedData, normalizedAlgorithm);
 
         // Calculate insights
         const insights = getPriceInsights(historicalData, forecast);
@@ -1624,7 +1636,7 @@ const getPriceForecast = async (req, res) => {
             commodity,
             state,
             district,
-            algorithm,
+            algorithm: normalizedAlgorithm,
             historicalData: historicalData.slice(-30), // Last 30 days for context
             forecast,
             insights,
